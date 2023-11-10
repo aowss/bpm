@@ -8,7 +8,7 @@ As explained in the `Using Flowable` section of the [documentation](https://www.
 
 * embedded
 
-The engine can be embedded in your application by including the Flowable library, which is available as a JAR.
+The engine can be embedded in your application by including the Flowable library, which is available as a JAR as demonstrated in the [`library` module](./library).
 
 ```xml
 <dependency> 
@@ -20,7 +20,7 @@ The engine can be embedded in your application by including the Flowable library
 
 It can therefore be embedded in a Java SE application or in any other type of application and in particular in a Spring Boot application.  
 
-For Spring Boot applications, a Spring Boot starter project exists: [`flowable-spring-boot-started`](https://mvnrepository.com/artifact/org.flowable/flowable-spring-boot-starter).
+For Spring Boot applications, the [`flowable-spring-boot-started`](https://mvnrepository.com/artifact/org.flowable/flowable-spring-boot-starter) Spring Boot starter project can be used as demonstrated in the [`spring-boot` module](./spring-boot).
 
 * standalone
 
