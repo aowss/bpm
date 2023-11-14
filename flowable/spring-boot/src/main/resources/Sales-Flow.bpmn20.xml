@@ -1,22 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-                    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
-                    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
-                    xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"
-                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
-                    xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0"
-                    xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0"
-                    xmlns:modeler="http://camunda.org/schema/modeler/1.0"
-                    id="Definitions_1yggv8x"
-                    targetNamespace="http://bpmn.io/schema/bpmn"
-                    exporter="Camunda Modeler"
-                    exporterVersion="5.16.0"
-                    modeler:executionPlatform="Camunda Cloud"
-                    modeler:executionPlatformVersion="8.2.0">
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0"
+                  xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0"
+                  id="Definitions_1yggv8x"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
   <bpmn:process id="Sales-Process" name="Sales Process" isExecutable="true">
     <bpmn:sequenceFlow id="Start-SalesOrder" sourceRef="SalesOrder" targetRef="SalesOrder-Type" />
-    <bpmn:serviceTask id="Task-Processing" name="Determine if any processing is needed" flowable:class="areChangesSignificant">
+    <bpmn:serviceTask id="Task-Processing" name="Determine if any processing is needed">
       <bpmn:documentation>Check if the differences between the previous version of the sales order and this version are significant</bpmn:documentation>
       <bpmn:incoming>Flow_18injm2</bpmn:incoming>
       <bpmn:outgoing>Task-Processing-Out</bpmn:outgoing>
@@ -35,23 +29,16 @@
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=(processingNeeded = true)</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:serviceTask id="Task-FinalizeSale" name="Finalize Sale">
-      <bpmn:extensionElements>
-        <zeebe:taskDefinition type="finalizeSale" />
-      </bpmn:extensionElements>
       <bpmn:incoming>Flow_1q4xktl</bpmn:incoming>
       <bpmn:incoming>Flow_1jh5w0z</bpmn:incoming>
       <bpmn:outgoing>Task-FinalizeSale-Out</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:businessRuleTask id="RuleTask-Invoice-Review" name="Does Invoice need review">
       <bpmn:documentation>Determine if the invoice needs manual review</bpmn:documentation>
-      <bpmn:extensionElements>
-        <zeebe:calledDecision decisionId="review-required" resultVariable="reviewRequired" />
-      </bpmn:extensionElements>
       <bpmn:incoming>Flow_0erdv5f</bpmn:incoming>
       <bpmn:outgoing>Flow_1qz7725</bpmn:outgoing>
     </bpmn:businessRuleTask>
     <bpmn:exclusiveGateway id="Gateway-Review" name="invoice review needed?">
-      <bpmn:extensionElements />
       <bpmn:incoming>Flow_1byavdx</bpmn:incoming>
       <bpmn:outgoing>Flow_0vyw4ln</bpmn:outgoing>
       <bpmn:outgoing>Flow_17rrlaz</bpmn:outgoing>
@@ -60,9 +47,6 @@
     <bpmn:sequenceFlow id="Flow_1q4xktl" name="No" sourceRef="Gateway_0rrf6hb" targetRef="Task-FinalizeSale" />
     <bpmn:sequenceFlow id="Flow_1byavdx" sourceRef="Task-GenerateInvoice" targetRef="Gateway-Review" />
     <bpmn:serviceTask id="Task-GenerateInvoice" name="Generate Invoice" default="Flow_1byavdx">
-      <bpmn:extensionElements>
-        <zeebe:taskDefinition type="generateInvoice" />
-      </bpmn:extensionElements>
       <bpmn:incoming>Flow_0b3n1gi</bpmn:incoming>
       <bpmn:outgoing>Flow_1byavdx</bpmn:outgoing>
     </bpmn:serviceTask>
@@ -71,9 +55,6 @@
       <bpmn:errorEventDefinition id="ErrorEventDefinition_07m67ll" errorRef="Error_1v9x728" />
     </bpmn:boundaryEvent>
     <bpmn:serviceTask id="Task-LogError" name="Log Error">
-      <bpmn:extensionElements>
-        <zeebe:taskDefinition type="generationError" />
-      </bpmn:extensionElements>
       <bpmn:incoming>Flow_0vlzlji</bpmn:incoming>
       <bpmn:outgoing>Flow_1g6i3hz</bpmn:outgoing>
     </bpmn:serviceTask>
@@ -90,26 +71,17 @@
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=(saleType = "New")</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:callActivity id="Activity_1xe7o1c" name="Send Invoice(s)">
-      <bpmn:extensionElements>
-        <zeebe:calledElement processId="dispatch" propagateAllChildVariables="false" />
-      </bpmn:extensionElements>
       <bpmn:incoming>Flow_01n7fud</bpmn:incoming>
       <bpmn:incoming>Flow_1che2jf</bpmn:incoming>
       <bpmn:incoming>Flow_17rrlaz</bpmn:incoming>
     </bpmn:callActivity>
     <bpmn:userTask id="UserTask-SalesReview" name="Sales Review">
-      <bpmn:extensionElements>
-        <zeebe:assignmentDefinition candidateGroups="Sales" />
-      </bpmn:extensionElements>
       <bpmn:incoming>Flow_1kni1c8</bpmn:incoming>
       <bpmn:incoming>Flow_1g6i3hz</bpmn:incoming>
       <bpmn:incoming>Flow_0vyw4ln</bpmn:incoming>
       <bpmn:outgoing>Flow_1pgua1u</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:userTask id="UserTask-LegalReview" name="Legal Review">
-      <bpmn:extensionElements>
-        <zeebe:assignmentDefinition candidateGroups="Legal" />
-      </bpmn:extensionElements>
       <bpmn:incoming>Flow_1b215db</bpmn:incoming>
       <bpmn:outgoing>UserTask-LegalReview-Out</bpmn:outgoing>
     </bpmn:userTask>
@@ -154,9 +126,6 @@
     </bpmn:parallelGateway>
     <bpmn:businessRuleTask id="Activity_1f7jzq1" name="Determine Recipients">
       <bpmn:documentation>Determine who should get the invoice</bpmn:documentation>
-      <bpmn:extensionElements>
-        <zeebe:calledDecision decisionId="delivery-group" resultVariable="deliveryGroup" />
-      </bpmn:extensionElements>
       <bpmn:incoming>Flow_1fr1af8</bpmn:incoming>
       <bpmn:outgoing>Flow_1ng9unu</bpmn:outgoing>
     </bpmn:businessRuleTask>
@@ -165,17 +134,11 @@
     <bpmn:sequenceFlow id="Flow_1fr1af8" sourceRef="Gateway_1vrbqbl" targetRef="Activity_1f7jzq1" />
     <bpmn:serviceTask id="Activity_163ijjq" name="Insert Order">
       <bpmn:documentation>Insert into Order table</bpmn:documentation>
-      <bpmn:extensionElements>
-        <zeebe:taskDefinition type="insertOrder" />
-      </bpmn:extensionElements>
       <bpmn:incoming>Flow_0clrq1y</bpmn:incoming>
       <bpmn:outgoing>Flow_03uqf5v</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:serviceTask id="Activity_0niypsf" name="Update Order">
       <bpmn:documentation>Update Order table</bpmn:documentation>
-      <bpmn:extensionElements>
-        <zeebe:taskDefinition type="updateOrder" />
-      </bpmn:extensionElements>
       <bpmn:incoming>Flow_0lza790</bpmn:incoming>
       <bpmn:outgoing>Flow_0k20zfg</bpmn:outgoing>
     </bpmn:serviceTask>
@@ -183,9 +146,6 @@
     <bpmn:sequenceFlow id="Flow_03uqf5v" sourceRef="Activity_163ijjq" targetRef="Task-AckReception-New" />
     <bpmn:businessRuleTask id="Activity_1c5e8v6" name="Determine Reportability">
       <bpmn:documentation>Determine if the sale is reportable and if it is, when it should be reported</bpmn:documentation>
-      <bpmn:extensionElements>
-        <zeebe:calledDecision decisionId="reportable" resultVariable="report" />
-      </bpmn:extensionElements>
       <bpmn:incoming>Flow_1ie8s53</bpmn:incoming>
       <bpmn:outgoing>Flow_06gpvhd</bpmn:outgoing>
     </bpmn:businessRuleTask>
@@ -193,9 +153,6 @@
     <bpmn:sequenceFlow id="Flow_06gpvhd" sourceRef="Activity_1c5e8v6" targetRef="Gateway_169xstr" />
     <bpmn:businessRuleTask id="Activity_17nta1n" name="Is Invoice needed">
       <bpmn:documentation>Determine if an invoice is needed</bpmn:documentation>
-      <bpmn:extensionElements>
-        <zeebe:calledDecision decisionId="invoice-required" resultVariable="invoiceRequired" />
-      </bpmn:extensionElements>
       <bpmn:incoming>Flow_1uam0jq</bpmn:incoming>
       <bpmn:outgoing>Flow_0nofidu</bpmn:outgoing>
     </bpmn:businessRuleTask>
@@ -204,9 +161,6 @@
     <bpmn:sequenceFlow id="Flow_0b3n1gi" name="Yes" sourceRef="Gateway_0rrf6hb" targetRef="Task-GenerateInvoice" />
     <bpmn:serviceTask id="Task-AckReception-New" name="Acknowledge Reception">
       <bpmn:documentation>Send acknowledgement message</bpmn:documentation>
-      <bpmn:extensionElements>
-        <zeebe:taskDefinition type="acknowledgeReception" />
-      </bpmn:extensionElements>
       <bpmn:incoming>Flow_03uqf5v</bpmn:incoming>
       <bpmn:outgoing>Flow_05sxzea</bpmn:outgoing>
     </bpmn:serviceTask>
@@ -227,9 +181,6 @@
     <bpmn:sequenceFlow id="Flow_18v9i6e" sourceRef="Gateway_169xstr" targetRef="Gateway_0rrf6hb" />
     <bpmn:serviceTask id="Task-AckReception-Update" name="Acknowledge Reception">
       <bpmn:documentation>Send acknowledgement message</bpmn:documentation>
-      <bpmn:extensionElements>
-        <zeebe:taskDefinition type="acknowledgeReception" />
-      </bpmn:extensionElements>
       <bpmn:incoming>Flow_0k20zfg</bpmn:incoming>
       <bpmn:outgoing>Flow_18injm2</bpmn:outgoing>
     </bpmn:serviceTask>
