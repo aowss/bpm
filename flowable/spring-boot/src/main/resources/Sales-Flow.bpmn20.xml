@@ -1,536 +1,527 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
-                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
-                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
-                  xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0"
-                  xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0"
-                  id="Definitions_1yggv8x"
-                  targetNamespace="http://bpmn.io/schema/bpmn">
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" xmlns:flowable="http://flowable.org/bpmn" id="Sales-Process-Definition" targetNamespace="http://bpmn.io/schema/bpmn">
+  <message id="salesOrder" name="salesOrderInput"/>
   <bpmn:process id="Sales-Process" name="Sales Process" isExecutable="true">
-    <bpmn:sequenceFlow id="Start-SalesOrder" sourceRef="SalesOrder" targetRef="SalesOrder-Type" />
-    <bpmn:serviceTask id="Task-Processing" name="Determine if any processing is needed">
+    <bpmn:sequenceFlow id="SalesOrder-Out" sourceRef="SalesOrder" targetRef="OrderType"/>
+    <bpmn:serviceTask id="CheckProcessingNeeded" name="Determine if any processing is needed" flowable:class="com.micasa.tutorial.services.CheckProcessingNeeded">
       <bpmn:documentation>Check if the differences between the previous version of the sales order and this version are significant</bpmn:documentation>
-      <bpmn:incoming>Flow_18injm2</bpmn:incoming>
-      <bpmn:outgoing>Task-Processing-Out</bpmn:outgoing>
+      <bpmn:incoming>AckReception-Update-Out</bpmn:incoming>
+      <bpmn:outgoing>CheckProcessingNeeded-Out</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:exclusiveGateway id="Gateway-Processing" name="need further processing?">
-      <bpmn:incoming>Task-Processing-Out</bpmn:incoming>
-      <bpmn:outgoing>Gateway-Processing-Needed</bpmn:outgoing>
-      <bpmn:outgoing>Gateway-Processing-NotNeeded</bpmn:outgoing>
+    <bpmn:exclusiveGateway id="IsProcessingNeeded" name="need further processing?">
+      <bpmn:incoming>CheckProcessingNeeded-Out</bpmn:incoming>
+      <bpmn:outgoing>ProcessingNeeded</bpmn:outgoing>
+      <bpmn:outgoing>ProcessingNotNeeded</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:sequenceFlow id="Task-Processing-Out" sourceRef="Task-Processing" targetRef="Gateway-Processing" />
+    <bpmn:sequenceFlow id="CheckProcessingNeeded-Out" sourceRef="CheckProcessingNeeded" targetRef="IsProcessingNeeded"/>
     <bpmn:endEvent id="End">
-      <bpmn:incoming>Task-FinalizeSale-Out</bpmn:incoming>
-      <bpmn:incoming>Gateway-Processing-NotNeeded</bpmn:incoming>
+      <bpmn:incoming>FinalizeSale-Out</bpmn:incoming>
+      <bpmn:incoming>ProcessingNotNeeded</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:sequenceFlow id="Gateway-Processing-Needed" name="Yes" sourceRef="Gateway-Processing" targetRef="Gateway_093hu2o">
+    <bpmn:sequenceFlow id="ProcessingNeeded" name="Yes" sourceRef="IsProcessingNeeded" targetRef="OrderType-End">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=(processingNeeded = true)</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:serviceTask id="Task-FinalizeSale" name="Finalize Sale">
-      <bpmn:incoming>Flow_1q4xktl</bpmn:incoming>
-      <bpmn:incoming>Flow_1jh5w0z</bpmn:incoming>
-      <bpmn:outgoing>Task-FinalizeSale-Out</bpmn:outgoing>
+    <bpmn:serviceTask id="FinalizeSale" name="Finalize Sale" flowable:class="com.micasa.tutorial.services.FinalizeSale">
+      <bpmn:incoming>InvoiceNotRequired</bpmn:incoming>
+      <bpmn:incoming>SalesClosed</bpmn:incoming>
+      <bpmn:outgoing>FinalizeSale-Out</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:businessRuleTask id="RuleTask-Invoice-Review" name="Does Invoice need review">
+    <bpmn:businessRuleTask id="ReviewNeeded" name="Does Invoice need review">
       <bpmn:documentation>Determine if the invoice needs manual review</bpmn:documentation>
-      <bpmn:incoming>Flow_0erdv5f</bpmn:incoming>
-      <bpmn:outgoing>Flow_1qz7725</bpmn:outgoing>
+      <bpmn:incoming>RulesEngine-ReviewNeeded</bpmn:incoming>
+      <bpmn:outgoing>ReviewNeeded-Out</bpmn:outgoing>
     </bpmn:businessRuleTask>
-    <bpmn:exclusiveGateway id="Gateway-Review" name="invoice review needed?">
-      <bpmn:incoming>Flow_1byavdx</bpmn:incoming>
-      <bpmn:outgoing>Flow_0vyw4ln</bpmn:outgoing>
-      <bpmn:outgoing>Flow_17rrlaz</bpmn:outgoing>
+    <bpmn:exclusiveGateway id="IsReviewNeeded" name="invoice review needed?">
+      <bpmn:incoming>GenerateInvoice-Out</bpmn:incoming>
+      <bpmn:outgoing>ReviewRequired</bpmn:outgoing>
+      <bpmn:outgoing>ReviewNotRequired</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:sequenceFlow id="Flow_1qz7725" sourceRef="RuleTask-Invoice-Review" targetRef="Gateway_169xstr" />
-    <bpmn:sequenceFlow id="Flow_1q4xktl" name="No" sourceRef="Gateway_0rrf6hb" targetRef="Task-FinalizeSale" />
-    <bpmn:sequenceFlow id="Flow_1byavdx" sourceRef="Task-GenerateInvoice" targetRef="Gateway-Review" />
-    <bpmn:serviceTask id="Task-GenerateInvoice" name="Generate Invoice" default="Flow_1byavdx">
-      <bpmn:incoming>Flow_0b3n1gi</bpmn:incoming>
-      <bpmn:outgoing>Flow_1byavdx</bpmn:outgoing>
+    <bpmn:sequenceFlow id="ReviewNeeded-Out" sourceRef="ReviewNeeded" targetRef="RulesEngine-End"/>
+    <bpmn:sequenceFlow id="InvoiceNotRequired" name="No" sourceRef="IsInvoiceNeeded" targetRef="FinalizeSale"/>
+    <bpmn:sequenceFlow id="GenerateInvoice-Out" sourceRef="GenerateInvoice" targetRef="IsReviewNeeded"/>
+    <bpmn:serviceTask id="GenerateInvoice" name="Generate Invoice" default="GenerateInvoice-Out" flowable:class="com.micasa.tutorial.services.GenerateInvoice">
+      <bpmn:incoming>InvoiceRequired</bpmn:incoming>
+      <bpmn:outgoing>GenerateInvoice-Out</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:boundaryEvent id="ErrorEvent-InvoiceGeneration" name="Invoice Generation Error" attachedToRef="Task-GenerateInvoice">
-      <bpmn:outgoing>Flow_0vlzlji</bpmn:outgoing>
-      <bpmn:errorEventDefinition id="ErrorEventDefinition_07m67ll" errorRef="Error_1v9x728" />
+    <bpmn:boundaryEvent id="InvoiceGenerationError" name="Invoice Generation Error" attachedToRef="GenerateInvoice">
+      <bpmn:outgoing>InvoiceGenerationError-Out</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_07m67ll"/>
     </bpmn:boundaryEvent>
-    <bpmn:serviceTask id="Task-LogError" name="Log Error">
-      <bpmn:incoming>Flow_0vlzlji</bpmn:incoming>
-      <bpmn:outgoing>Flow_1g6i3hz</bpmn:outgoing>
+    <bpmn:serviceTask id="LogError" name="Log Error" flowable:class="com.micasa.tutorial.services.LogError">
+      <bpmn:incoming>InvoiceGenerationError-Out</bpmn:incoming>
+      <bpmn:outgoing>LogError-Out</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:sequenceFlow id="Flow_1g6i3hz" sourceRef="Task-LogError" targetRef="UserTask-SalesReview" />
-    <bpmn:exclusiveGateway id="SalesOrder-Type" name="is new order?">
-      <bpmn:incoming>Start-SalesOrder</bpmn:incoming>
-      <bpmn:outgoing>Flow_0lza790</bpmn:outgoing>
-      <bpmn:outgoing>Flow_0clrq1y</bpmn:outgoing>
+    <bpmn:sequenceFlow id="LogError-Out" sourceRef="LogError" targetRef="SalesReview"/>
+    <bpmn:exclusiveGateway id="OrderType" name="is new order?">
+      <bpmn:incoming>SalesOrder-Out</bpmn:incoming>
+      <bpmn:outgoing>UpdatedOrder</bpmn:outgoing>
+      <bpmn:outgoing>NewOrder</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:sequenceFlow id="Flow_0lza790" name="No" sourceRef="SalesOrder-Type" targetRef="Activity_0niypsf">
+    <bpmn:sequenceFlow id="UpdatedOrder" name="No" sourceRef="OrderType" targetRef="UpdateOrder">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=(saleType != "New")</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_0clrq1y" name="Yes" sourceRef="SalesOrder-Type" targetRef="Activity_163ijjq">
+    <bpmn:sequenceFlow id="NewOrder" name="Yes" sourceRef="OrderType" targetRef="InsertOrder">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=(saleType = "New")</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:callActivity id="Activity_1xe7o1c" name="Send Invoice(s)">
-      <bpmn:incoming>Flow_01n7fud</bpmn:incoming>
-      <bpmn:incoming>Flow_1che2jf</bpmn:incoming>
-      <bpmn:incoming>Flow_17rrlaz</bpmn:incoming>
+    <bpmn:callActivity id="SendInvoice" name="Send Invoice(s)">
+      <bpmn:incoming>SalesApproved</bpmn:incoming>
+      <bpmn:incoming>SalesDone</bpmn:incoming>
+      <bpmn:incoming>ReviewNotRequired</bpmn:incoming>
     </bpmn:callActivity>
-    <bpmn:userTask id="UserTask-SalesReview" name="Sales Review">
-      <bpmn:incoming>Flow_1kni1c8</bpmn:incoming>
-      <bpmn:incoming>Flow_1g6i3hz</bpmn:incoming>
-      <bpmn:incoming>Flow_0vyw4ln</bpmn:incoming>
-      <bpmn:outgoing>Flow_1pgua1u</bpmn:outgoing>
+    <bpmn:userTask id="SalesReview" name="Sales Review">
+      <bpmn:incoming>SalesRejected</bpmn:incoming>
+      <bpmn:incoming>LogError-Out</bpmn:incoming>
+      <bpmn:incoming>ReviewRequired</bpmn:incoming>
+      <bpmn:outgoing>SalesReview-Out</bpmn:outgoing>
     </bpmn:userTask>
-    <bpmn:userTask id="UserTask-LegalReview" name="Legal Review">
-      <bpmn:incoming>Flow_1b215db</bpmn:incoming>
-      <bpmn:outgoing>UserTask-LegalReview-Out</bpmn:outgoing>
+    <bpmn:userTask id="LegalReview" name="Legal Review">
+      <bpmn:incoming>LegalReviewNeeded</bpmn:incoming>
+      <bpmn:outgoing>LegalReview-Out</bpmn:outgoing>
     </bpmn:userTask>
-    <bpmn:exclusiveGateway id="Gateway-SalesReview" name="Status">
-      <bpmn:incoming>Flow_1pgua1u</bpmn:incoming>
-      <bpmn:outgoing>Flow_1jh5w0z</bpmn:outgoing>
-      <bpmn:outgoing>Flow_1b215db</bpmn:outgoing>
-      <bpmn:outgoing>Flow_1che2jf</bpmn:outgoing>
+    <bpmn:exclusiveGateway id="SalesReviewResult" name="Status">
+      <bpmn:incoming>SalesReview-Out</bpmn:incoming>
+      <bpmn:outgoing>SalesClosed</bpmn:outgoing>
+      <bpmn:outgoing>LegalReviewNeeded</bpmn:outgoing>
+      <bpmn:outgoing>SalesDone</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:sequenceFlow id="Flow_1pgua1u" sourceRef="UserTask-SalesReview" targetRef="Gateway-SalesReview" />
-    <bpmn:sequenceFlow id="Flow_1jh5w0z" name="Closed" sourceRef="Gateway-SalesReview" targetRef="Task-FinalizeSale">
+    <bpmn:sequenceFlow id="SalesReview-Out" sourceRef="SalesReview" targetRef="SalesReviewResult"/>
+    <bpmn:sequenceFlow id="SalesClosed" name="Closed" sourceRef="SalesReviewResult" targetRef="FinalizeSale">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=(status = "Closed")</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_1b215db" name="Legal Review" sourceRef="Gateway-SalesReview" targetRef="UserTask-LegalReview">
+    <bpmn:sequenceFlow id="LegalReviewNeeded" name="Legal Review" sourceRef="SalesReviewResult" targetRef="LegalReview">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=(status = "Legal Review")</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:exclusiveGateway id="Gateway-LegalReview" name="Status">
-      <bpmn:incoming>UserTask-LegalReview-Out</bpmn:incoming>
-      <bpmn:outgoing>Flow_01n7fud</bpmn:outgoing>
-      <bpmn:outgoing>Flow_1kni1c8</bpmn:outgoing>
+    <bpmn:exclusiveGateway id="LegalReviewResult" name="Status">
+      <bpmn:incoming>LegalReview-Out</bpmn:incoming>
+      <bpmn:outgoing>SalesApproved</bpmn:outgoing>
+      <bpmn:outgoing>SalesRejected</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:sequenceFlow id="UserTask-LegalReview-Out" sourceRef="UserTask-LegalReview" targetRef="Gateway-LegalReview" />
-    <bpmn:sequenceFlow id="Flow_01n7fud" name="Approved" sourceRef="Gateway-LegalReview" targetRef="Activity_1xe7o1c">
+    <bpmn:sequenceFlow id="LegalReview-Out" sourceRef="LegalReview" targetRef="LegalReviewResult"/>
+    <bpmn:sequenceFlow id="SalesApproved" name="Approved" sourceRef="LegalReviewResult" targetRef="SendInvoice">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=(status = "Approved")</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_1kni1c8" name="Rejected" sourceRef="Gateway-LegalReview" targetRef="UserTask-SalesReview">
+    <bpmn:sequenceFlow id="SalesRejected" name="Rejected" sourceRef="LegalReviewResult" targetRef="SalesReview">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=(status = "Rejected")</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_1che2jf" name="Done" sourceRef="Gateway-SalesReview" targetRef="Activity_1xe7o1c">
+    <bpmn:sequenceFlow id="SalesDone" name="Done" sourceRef="SalesReviewResult" targetRef="SendInvoice">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=(status = "Done")</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:startEvent id="SalesOrder" name="sales order">
-      <bpmn:outgoing>Start-SalesOrder</bpmn:outgoing>
-      <bpmn:messageEventDefinition id="MessageEventDefinition_1bmp26q" />
+      <bpmn:outgoing>SalesOrder-Out</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="SalesOrderMessage" messageRef="salesOrder"/>
     </bpmn:startEvent>
-    <bpmn:parallelGateway id="Gateway_1vrbqbl" name="Call Rules Engine">
-      <bpmn:incoming>Flow_0y5lxhc</bpmn:incoming>
-      <bpmn:outgoing>Flow_0erdv5f</bpmn:outgoing>
-      <bpmn:outgoing>Flow_1fr1af8</bpmn:outgoing>
-      <bpmn:outgoing>Flow_1ie8s53</bpmn:outgoing>
-      <bpmn:outgoing>Flow_1uam0jq</bpmn:outgoing>
+    <bpmn:parallelGateway id="RulesEngine" name="Call Rules Engine">
+      <bpmn:incoming>OrderType-End-Out</bpmn:incoming>
+      <bpmn:outgoing>RulesEngine-ReviewNeeded</bpmn:outgoing>
+      <bpmn:outgoing>RulesEngine-Recipients</bpmn:outgoing>
+      <bpmn:outgoing>RulesEngine-Reportability</bpmn:outgoing>
+      <bpmn:outgoing>RulesEngine-InvoiceNeeded</bpmn:outgoing>
     </bpmn:parallelGateway>
-    <bpmn:businessRuleTask id="Activity_1f7jzq1" name="Determine Recipients">
+    <bpmn:businessRuleTask id="Recipients" name="Determine Recipients">
       <bpmn:documentation>Determine who should get the invoice</bpmn:documentation>
-      <bpmn:incoming>Flow_1fr1af8</bpmn:incoming>
-      <bpmn:outgoing>Flow_1ng9unu</bpmn:outgoing>
+      <bpmn:incoming>RulesEngine-Recipients</bpmn:incoming>
+      <bpmn:outgoing>Recipients-Out</bpmn:outgoing>
     </bpmn:businessRuleTask>
-    <bpmn:sequenceFlow id="Flow_1ng9unu" sourceRef="Activity_1f7jzq1" targetRef="Gateway_169xstr" />
-    <bpmn:sequenceFlow id="Flow_0erdv5f" sourceRef="Gateway_1vrbqbl" targetRef="RuleTask-Invoice-Review" />
-    <bpmn:sequenceFlow id="Flow_1fr1af8" sourceRef="Gateway_1vrbqbl" targetRef="Activity_1f7jzq1" />
-    <bpmn:serviceTask id="Activity_163ijjq" name="Insert Order">
+    <bpmn:sequenceFlow id="Recipients-Out" sourceRef="Recipients" targetRef="RulesEngine-End"/>
+    <bpmn:sequenceFlow id="RulesEngine-ReviewNeeded" sourceRef="RulesEngine" targetRef="ReviewNeeded"/>
+    <bpmn:sequenceFlow id="RulesEngine-Recipients" sourceRef="RulesEngine" targetRef="Recipients"/>
+    <bpmn:serviceTask id="InsertOrder" name="Insert Order" flowable:class="com.micasa.tutorial.services.InsertOrder">
       <bpmn:documentation>Insert into Order table</bpmn:documentation>
-      <bpmn:incoming>Flow_0clrq1y</bpmn:incoming>
-      <bpmn:outgoing>Flow_03uqf5v</bpmn:outgoing>
+      <bpmn:incoming>NewOrder</bpmn:incoming>
+      <bpmn:outgoing>InsertOrder-Out</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="Activity_0niypsf" name="Update Order">
+    <bpmn:serviceTask id="UpdateOrder" name="Update Order" flowable:class="com.micasa.tutorial.services.UpdateOrder">
       <bpmn:documentation>Update Order table</bpmn:documentation>
-      <bpmn:incoming>Flow_0lza790</bpmn:incoming>
-      <bpmn:outgoing>Flow_0k20zfg</bpmn:outgoing>
+      <bpmn:incoming>UpdatedOrder</bpmn:incoming>
+      <bpmn:outgoing>UpdateOrder-Out</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:sequenceFlow id="Flow_0k20zfg" sourceRef="Activity_0niypsf" targetRef="Task-AckReception-Update" />
-    <bpmn:sequenceFlow id="Flow_03uqf5v" sourceRef="Activity_163ijjq" targetRef="Task-AckReception-New" />
-    <bpmn:businessRuleTask id="Activity_1c5e8v6" name="Determine Reportability">
+    <bpmn:sequenceFlow id="UpdateOrder-Out" sourceRef="UpdateOrder" targetRef="AckReception-Update"/>
+    <bpmn:sequenceFlow id="InsertOrder-Out" sourceRef="InsertOrder" targetRef="AckReception-New"/>
+    <bpmn:businessRuleTask id="Reportability" name="Determine Reportability">
       <bpmn:documentation>Determine if the sale is reportable and if it is, when it should be reported</bpmn:documentation>
-      <bpmn:incoming>Flow_1ie8s53</bpmn:incoming>
-      <bpmn:outgoing>Flow_06gpvhd</bpmn:outgoing>
+      <bpmn:incoming>RulesEngine-Reportability</bpmn:incoming>
+      <bpmn:outgoing>Reportability-Out</bpmn:outgoing>
     </bpmn:businessRuleTask>
-    <bpmn:sequenceFlow id="Flow_1ie8s53" sourceRef="Gateway_1vrbqbl" targetRef="Activity_1c5e8v6" />
-    <bpmn:sequenceFlow id="Flow_06gpvhd" sourceRef="Activity_1c5e8v6" targetRef="Gateway_169xstr" />
-    <bpmn:businessRuleTask id="Activity_17nta1n" name="Is Invoice needed">
+    <bpmn:sequenceFlow id="RulesEngine-Reportability" sourceRef="RulesEngine" targetRef="Reportability"/>
+    <bpmn:sequenceFlow id="Reportability-Out" sourceRef="Reportability" targetRef="RulesEngine-End"/>
+    <bpmn:businessRuleTask id="InvoiceNeeded" name="Is Invoice needed">
       <bpmn:documentation>Determine if an invoice is needed</bpmn:documentation>
-      <bpmn:incoming>Flow_1uam0jq</bpmn:incoming>
-      <bpmn:outgoing>Flow_0nofidu</bpmn:outgoing>
+      <bpmn:incoming>RulesEngine-InvoiceNeeded</bpmn:incoming>
+      <bpmn:outgoing>InvoiceNeeded-Out</bpmn:outgoing>
     </bpmn:businessRuleTask>
-    <bpmn:sequenceFlow id="Flow_1uam0jq" sourceRef="Gateway_1vrbqbl" targetRef="Activity_17nta1n" />
-    <bpmn:sequenceFlow id="Flow_0nofidu" sourceRef="Activity_17nta1n" targetRef="Gateway_169xstr" />
-    <bpmn:sequenceFlow id="Flow_0b3n1gi" name="Yes" sourceRef="Gateway_0rrf6hb" targetRef="Task-GenerateInvoice" />
-    <bpmn:serviceTask id="Task-AckReception-New" name="Acknowledge Reception">
+    <bpmn:sequenceFlow id="RulesEngine-InvoiceNeeded" sourceRef="RulesEngine" targetRef="InvoiceNeeded"/>
+    <bpmn:sequenceFlow id="InvoiceNeeded-Out" sourceRef="InvoiceNeeded" targetRef="RulesEngine-End"/>
+    <bpmn:sequenceFlow id="InvoiceRequired" name="Yes" sourceRef="IsInvoiceNeeded" targetRef="GenerateInvoice"/>
+    <bpmn:serviceTask id="AckReception-New" name="Acknowledge Reception" flowable:class="com.micasa.tutorial.services.AckReception">
       <bpmn:documentation>Send acknowledgement message</bpmn:documentation>
-      <bpmn:incoming>Flow_03uqf5v</bpmn:incoming>
-      <bpmn:outgoing>Flow_05sxzea</bpmn:outgoing>
+      <bpmn:incoming>InsertOrder-Out</bpmn:incoming>
+      <bpmn:outgoing>AckReception-New-Out</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:sequenceFlow id="Flow_05sxzea" sourceRef="Task-AckReception-New" targetRef="Gateway_093hu2o" />
-    <bpmn:sequenceFlow id="Gateway-Processing-NotNeeded" name="No" sourceRef="Gateway-Processing" targetRef="End" />
-    <bpmn:parallelGateway id="Gateway_169xstr" name="Rules Engine calls done">
-      <bpmn:incoming>Flow_1qz7725</bpmn:incoming>
-      <bpmn:incoming>Flow_1ng9unu</bpmn:incoming>
-      <bpmn:incoming>Flow_06gpvhd</bpmn:incoming>
-      <bpmn:incoming>Flow_0nofidu</bpmn:incoming>
-      <bpmn:outgoing>Flow_18v9i6e</bpmn:outgoing>
+    <bpmn:sequenceFlow id="AckReception-New-Out" sourceRef="AckReception-New" targetRef="OrderType-End"/>
+    <bpmn:sequenceFlow id="ProcessingNotNeeded" name="No" sourceRef="IsProcessingNeeded" targetRef="End"/>
+    <bpmn:parallelGateway id="RulesEngine-End" name="Rules Engine calls done">
+      <bpmn:incoming>ReviewNeeded-Out</bpmn:incoming>
+      <bpmn:incoming>Recipients-Out</bpmn:incoming>
+      <bpmn:incoming>Reportability-Out</bpmn:incoming>
+      <bpmn:incoming>InvoiceNeeded-Out</bpmn:incoming>
+      <bpmn:outgoing>RulesEngine-End-Out</bpmn:outgoing>
     </bpmn:parallelGateway>
-    <bpmn:exclusiveGateway id="Gateway_0rrf6hb" name="invoice required?">
-      <bpmn:incoming>Flow_18v9i6e</bpmn:incoming>
-      <bpmn:outgoing>Flow_1q4xktl</bpmn:outgoing>
-      <bpmn:outgoing>Flow_0b3n1gi</bpmn:outgoing>
+    <bpmn:exclusiveGateway id="IsInvoiceNeeded" name="invoice required?">
+      <bpmn:incoming>RulesEngine-End-Out</bpmn:incoming>
+      <bpmn:outgoing>InvoiceNotRequired</bpmn:outgoing>
+      <bpmn:outgoing>InvoiceRequired</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:sequenceFlow id="Flow_18v9i6e" sourceRef="Gateway_169xstr" targetRef="Gateway_0rrf6hb" />
-    <bpmn:serviceTask id="Task-AckReception-Update" name="Acknowledge Reception">
+    <bpmn:sequenceFlow id="RulesEngine-End-Out" sourceRef="RulesEngine-End" targetRef="IsInvoiceNeeded"/>
+    <bpmn:serviceTask id="AckReception-Update" name="Acknowledge Reception" flowable:class="com.micasa.tutorial.services.AckReception">
       <bpmn:documentation>Send acknowledgement message</bpmn:documentation>
-      <bpmn:incoming>Flow_0k20zfg</bpmn:incoming>
-      <bpmn:outgoing>Flow_18injm2</bpmn:outgoing>
+      <bpmn:incoming>UpdateOrder-Out</bpmn:incoming>
+      <bpmn:outgoing>AckReception-Update-Out</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:sequenceFlow id="Flow_18injm2" sourceRef="Task-AckReception-Update" targetRef="Task-Processing" />
-    <bpmn:exclusiveGateway id="Gateway_093hu2o">
-      <bpmn:incoming>Flow_05sxzea</bpmn:incoming>
-      <bpmn:incoming>Gateway-Processing-Needed</bpmn:incoming>
-      <bpmn:outgoing>Flow_0y5lxhc</bpmn:outgoing>
+    <bpmn:sequenceFlow id="AckReception-Update-Out" sourceRef="AckReception-Update" targetRef="CheckProcessingNeeded"/>
+    <bpmn:exclusiveGateway id="OrderType-End">
+      <bpmn:incoming>AckReception-New-Out</bpmn:incoming>
+      <bpmn:incoming>ProcessingNeeded</bpmn:incoming>
+      <bpmn:outgoing>OrderType-End-Out</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:sequenceFlow id="Flow_0y5lxhc" sourceRef="Gateway_093hu2o" targetRef="Gateway_1vrbqbl" />
-    <bpmn:sequenceFlow id="Flow_0vyw4ln" name="Yes" sourceRef="Gateway-Review" targetRef="UserTask-SalesReview" />
-    <bpmn:sequenceFlow id="Task-FinalizeSale-Out" sourceRef="Task-FinalizeSale" targetRef="End" />
-    <bpmn:sequenceFlow id="Flow_17rrlaz" name="No" sourceRef="Gateway-Review" targetRef="Activity_1xe7o1c" />
-    <bpmn:sequenceFlow id="Flow_0vlzlji" sourceRef="ErrorEvent-InvoiceGeneration" targetRef="Task-LogError" />
+    <bpmn:sequenceFlow id="OrderType-End-Out" sourceRef="OrderType-End" targetRef="RulesEngine"/>
+    <bpmn:sequenceFlow id="ReviewRequired" name="Yes" sourceRef="IsReviewNeeded" targetRef="SalesReview"/>
+    <bpmn:sequenceFlow id="FinalizeSale-Out" sourceRef="FinalizeSale" targetRef="End"/>
+    <bpmn:sequenceFlow id="ReviewNotRequired" name="No" sourceRef="IsReviewNeeded" targetRef="SendInvoice"/>
+    <bpmn:sequenceFlow id="InvoiceGenerationError-Out" sourceRef="InvoiceGenerationError" targetRef="LogError"/>
   </bpmn:process>
-  <bpmn:error id="Error_1v9x728" name="Contract Generation Error" errorCode="contract-generation-error" />
-  <bpmn:error id="Error_0p9a46k" name="OCR Warnings" errorCode="ocr-warnings" />
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Sales-Process">
-      <bpmndi:BPMNShape id="Task-Processing_di" bpmnElement="Task-Processing">
-        <dc:Bounds x="589" y="487" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="Task-Processing_di" bpmnElement="CheckProcessingNeeded">
+        <dc:Bounds x="589" y="487" width="100" height="80"/>
+        <bpmndi:BPMNLabel/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway-Processing_di" bpmnElement="Gateway-Processing" isMarkerVisible="true">
-        <dc:Bounds x="723" y="502" width="50" height="50" />
+      <bpmndi:BPMNShape id="Gateway-Processing_di" bpmnElement="IsProcessingNeeded" isMarkerVisible="true">
+        <dc:Bounds x="723" y="502" width="50" height="50"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="719" y="465" width="60" height="27" />
+          <dc:Bounds x="719" y="465" width="61" height="27"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="End_di" bpmnElement="End">
-        <dc:Bounds x="2242" y="692" width="36" height="36" />
+        <dc:Bounds x="2242" y="692" width="36" height="36"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1tu72a9_di" bpmnElement="Task-FinalizeSale">
-        <dc:Bounds x="1828" y="670" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="Activity_1tu72a9_di" bpmnElement="FinalizeSale">
+        <dc:Bounds x="1828" y="670" width="100" height="80"/>
+        <bpmndi:BPMNLabel/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_17tvdks_di" bpmnElement="RuleTask-Invoice-Review">
-        <dc:Bounds x="1000" y="544" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="Activity_17tvdks_di" bpmnElement="ReviewNeeded">
+        <dc:Bounds x="1000" y="544" width="100" height="80"/>
+        <bpmndi:BPMNLabel/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway-Review_di" bpmnElement="Gateway-Review" isMarkerVisible="true">
-        <dc:Bounds x="1545" y="425" width="50" height="50" />
+      <bpmndi:BPMNShape id="Gateway-Review_di" bpmnElement="IsReviewNeeded" isMarkerVisible="true">
+        <dc:Bounds x="1545" y="425" width="50" height="50"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1535" y="476" width="70" height="27" />
+          <dc:Bounds x="1535" y="476" width="71" height="27"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1k5esln_di" bpmnElement="Task-GenerateInvoice">
-        <dc:Bounds x="1380" y="410" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="Activity_1k5esln_di" bpmnElement="GenerateInvoice">
+        <dc:Bounds x="1380" y="410" width="100" height="80"/>
+        <bpmndi:BPMNLabel/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task-LogError_di" bpmnElement="Task-LogError" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
-        <dc:Bounds x="1380" y="570" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="Task-LogError_di" bpmnElement="LogError" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
+        <dc:Bounds x="1380" y="570" width="100" height="80"/>
+        <bpmndi:BPMNLabel/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_1uhdicj_di" bpmnElement="SalesOrder-Type" isMarkerVisible="true">
-        <dc:Bounds x="226" y="425" width="50" height="50" />
+      <bpmndi:BPMNShape id="Gateway_1uhdicj_di" bpmnElement="OrderType" isMarkerVisible="true">
+        <dc:Bounds x="226" y="425" width="50" height="50"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="286" y="443" width="67" height="14" />
+          <dc:Bounds x="286" y="443" width="67" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_044ep3w_di" bpmnElement="Activity_1xe7o1c">
-        <dc:Bounds x="2068" y="140" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="Activity_044ep3w_di" bpmnElement="SendInvoice">
+        <dc:Bounds x="2068" y="140" width="100" height="80"/>
+        <bpmndi:BPMNLabel/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="UserTask-SalesReview_di" bpmnElement="UserTask-SalesReview">
-        <dc:Bounds x="1688" y="410" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="UserTask-SalesReview_di" bpmnElement="SalesReview">
+        <dc:Bounds x="1688" y="410" width="100" height="80"/>
+        <bpmndi:BPMNLabel/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="UserTask-LegalReview_di" bpmnElement="UserTask-LegalReview">
-        <dc:Bounds x="1828" y="256" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="UserTask-LegalReview_di" bpmnElement="LegalReview">
+        <dc:Bounds x="1828" y="256" width="100" height="80"/>
+        <bpmndi:BPMNLabel/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway-SalesReview_di" bpmnElement="Gateway-SalesReview" isMarkerVisible="true">
-        <dc:Bounds x="1853" y="425" width="50" height="50" />
+      <bpmndi:BPMNShape id="Gateway-SalesReview_di" bpmnElement="SalesReviewResult" isMarkerVisible="true">
+        <dc:Bounds x="1853" y="425" width="50" height="50"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1832" y="463" width="32" height="14" />
+          <dc:Bounds x="1832" y="463" width="32" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway-LegalReview_di" bpmnElement="Gateway-LegalReview" isMarkerVisible="true">
-        <dc:Bounds x="1853" y="155" width="50" height="50" />
+      <bpmndi:BPMNShape id="Gateway-LegalReview_di" bpmnElement="LegalReviewResult" isMarkerVisible="true">
+        <dc:Bounds x="1853" y="155" width="50" height="50"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1862" y="131" width="32" height="14" />
+          <dc:Bounds x="1862" y="131" width="32" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0yfpx4l_di" bpmnElement="SalesOrder">
-        <dc:Bounds x="143" y="432" width="36" height="36" />
+        <dc:Bounds x="143" y="432" width="36" height="36"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="135" y="475" width="55" height="14" />
+          <dc:Bounds x="135" y="475" width="56" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_1qgtai4_di" bpmnElement="Gateway_1vrbqbl">
-        <dc:Bounds x="875" y="425" width="50" height="50" />
+      <bpmndi:BPMNShape id="Gateway_1qgtai4_di" bpmnElement="RulesEngine">
+        <dc:Bounds x="875" y="425" width="50" height="50"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="857" y="482" width="88" height="14" />
+          <dc:Bounds x="857" y="482" width="88" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1h0mgp7_di" bpmnElement="Activity_1f7jzq1">
-        <dc:Bounds x="1000" y="354" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="Activity_1h0mgp7_di" bpmnElement="Recipients">
+        <dc:Bounds x="1000" y="354" width="100" height="80"/>
+        <bpmndi:BPMNLabel/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_0luacyv_di" bpmnElement="Activity_163ijjq">
-        <dc:Bounds x="321" y="330" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="Activity_0luacyv_di" bpmnElement="InsertOrder">
+        <dc:Bounds x="321" y="330" width="100" height="80"/>
+        <bpmndi:BPMNLabel/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_03abpln_di" bpmnElement="Activity_0niypsf">
-        <dc:Bounds x="321" y="487" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="Activity_03abpln_di" bpmnElement="UpdateOrder">
+        <dc:Bounds x="321" y="487" width="100" height="80"/>
+        <bpmndi:BPMNLabel/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1sq17pn_di" bpmnElement="Activity_1c5e8v6">
-        <dc:Bounds x="1000" y="256" width="100" height="80" />
+      <bpmndi:BPMNShape id="Activity_1sq17pn_di" bpmnElement="Reportability">
+        <dc:Bounds x="1000.00006" y="256.0" width="100" height="80"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1krbw5e_di" bpmnElement="Activity_17nta1n">
-        <dc:Bounds x="1000" y="450" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="Activity_1krbw5e_di" bpmnElement="InvoiceNeeded">
+        <dc:Bounds x="1000" y="450" width="100" height="80"/>
+        <bpmndi:BPMNLabel/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="BPMNShape_0c1e9xs" bpmnElement="Task-AckReception-New">
-        <dc:Bounds x="458" y="330" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="BPMNShape_0c1e9xs" bpmnElement="AckReception-New">
+        <dc:Bounds x="458" y="330" width="100" height="80"/>
+        <bpmndi:BPMNLabel/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_1s2hpqs_di" bpmnElement="Gateway_169xstr">
-        <dc:Bounds x="1175" y="425" width="50" height="50" />
+      <bpmndi:BPMNShape id="Gateway_1s2hpqs_di" bpmnElement="RulesEngine-End">
+        <dc:Bounds x="1175" y="425" width="50" height="50"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1168" y="482" width="66" height="27" />
+          <dc:Bounds x="1168" y="482" width="66" height="27"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_0rrf6hb_di" bpmnElement="Gateway_0rrf6hb" isMarkerVisible="true">
-        <dc:Bounds x="1275" y="425" width="50" height="50" />
+      <bpmndi:BPMNShape id="Gateway_0rrf6hb_di" bpmnElement="IsInvoiceNeeded" isMarkerVisible="true">
+        <dc:Bounds x="1275" y="425" width="50" height="50"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1259" y="395" width="84" height="14" />
+          <dc:Bounds x="1259" y="395" width="84" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="BPMNShape_0jk5cx7" bpmnElement="Task-AckReception-Update">
-        <dc:Bounds x="458" y="487" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="BPMNShape_0jk5cx7" bpmnElement="AckReception-Update">
+        <dc:Bounds x="458" y="487" width="100" height="80"/>
+        <bpmndi:BPMNLabel/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_093hu2o_di" bpmnElement="Gateway_093hu2o" isMarkerVisible="true">
-        <dc:Bounds x="795" y="425" width="50" height="50" />
+      <bpmndi:BPMNShape id="Gateway_093hu2o_di" bpmnElement="OrderType-End" isMarkerVisible="true">
+        <dc:Bounds x="795" y="425" width="50" height="50"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_086u0xx_di" bpmnElement="ErrorEvent-InvoiceGeneration" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
-        <dc:Bounds x="1412" y="472" width="36" height="36" />
+      <bpmndi:BPMNShape id="Event_086u0xx_di" bpmnElement="InvoiceGenerationError" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
+        <dc:Bounds x="1412" y="472" width="36" height="36"/>
         <bpmndi:BPMNLabel color:color="#831311">
-          <dc:Bounds x="1338" y="496" width="83" height="27" />
+          <dc:Bounds x="1338" y="496" width="84" height="27"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Start-SalesOrder_di" bpmnElement="Start-SalesOrder">
-        <di:waypoint x="179" y="450" />
-        <di:waypoint x="226" y="450" />
+      <bpmndi:BPMNEdge id="Start-SalesOrder_di" bpmnElement="SalesOrder-Out">
+        <di:waypoint x="179" y="450"/>
+        <di:waypoint x="226" y="450"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Task-Processing-Out_di" bpmnElement="Task-Processing-Out">
-        <di:waypoint x="689" y="527" />
-        <di:waypoint x="723" y="527" />
+      <bpmndi:BPMNEdge id="Task-Processing-Out_di" bpmnElement="CheckProcessingNeeded-Out">
+        <di:waypoint x="689" y="527"/>
+        <di:waypoint x="723" y="527"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Gateway-Processing-Needed_di" bpmnElement="Gateway-Processing-Needed">
-        <di:waypoint x="773" y="527" />
-        <di:waypoint x="820" y="527" />
-        <di:waypoint x="820" y="475" />
+      <bpmndi:BPMNEdge id="Gateway-Processing-Needed_di" bpmnElement="ProcessingNeeded">
+        <di:waypoint x="773" y="527"/>
+        <di:waypoint x="820" y="527"/>
+        <di:waypoint x="820" y="475"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="781" y="533" width="18" height="14" />
+          <dc:Bounds x="781" y="533" width="18" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1qz7725_di" bpmnElement="Flow_1qz7725">
-        <di:waypoint x="1100" y="584" />
-        <di:waypoint x="1130" y="584" />
-        <di:waypoint x="1130" y="450" />
-        <di:waypoint x="1175" y="450" />
+      <bpmndi:BPMNEdge id="Flow_1qz7725_di" bpmnElement="ReviewNeeded-Out">
+        <di:waypoint x="1100" y="584"/>
+        <di:waypoint x="1130" y="584"/>
+        <di:waypoint x="1130" y="450"/>
+        <di:waypoint x="1175" y="450"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1q4xktl_di" bpmnElement="Flow_1q4xktl">
-        <di:waypoint x="1300" y="475" />
-        <di:waypoint x="1300" y="710" />
-        <di:waypoint x="1828" y="710" />
+      <bpmndi:BPMNEdge id="Flow_1q4xktl_di" bpmnElement="InvoiceNotRequired">
+        <di:waypoint x="1300" y="475"/>
+        <di:waypoint x="1300" y="710"/>
+        <di:waypoint x="1828" y="710"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1312" y="483" width="15" height="14" />
+          <dc:Bounds x="1312" y="483" width="15" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1byavdx_di" bpmnElement="Flow_1byavdx">
-        <di:waypoint x="1480" y="450" />
-        <di:waypoint x="1545" y="450" />
+      <bpmndi:BPMNEdge id="Flow_1byavdx_di" bpmnElement="GenerateInvoice-Out">
+        <di:waypoint x="1480" y="450"/>
+        <di:waypoint x="1545" y="450"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1g6i3hz_di" bpmnElement="Flow_1g6i3hz" bioc:stroke="#831311" color:border-color="#831311">
-        <di:waypoint x="1480" y="610" />
-        <di:waypoint x="1738" y="610" />
-        <di:waypoint x="1738" y="490" />
+      <bpmndi:BPMNEdge id="Flow_1g6i3hz_di" bpmnElement="LogError-Out" bioc:stroke="#831311" color:border-color="#831311">
+        <di:waypoint x="1480" y="610"/>
+        <di:waypoint x="1738" y="610"/>
+        <di:waypoint x="1738" y="490"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0lza790_di" bpmnElement="Flow_0lza790">
-        <di:waypoint x="251" y="475" />
-        <di:waypoint x="251" y="527" />
-        <di:waypoint x="321" y="527" />
+      <bpmndi:BPMNEdge id="Flow_0lza790_di" bpmnElement="UpdatedOrder">
+        <di:waypoint x="251" y="475"/>
+        <di:waypoint x="251" y="527"/>
+        <di:waypoint x="321" y="527"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="254" y="494" width="15" height="14" />
+          <dc:Bounds x="254" y="494" width="15" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0clrq1y_di" bpmnElement="Flow_0clrq1y">
-        <di:waypoint x="251" y="425" />
-        <di:waypoint x="251" y="370" />
-        <di:waypoint x="321" y="370" />
+      <bpmndi:BPMNEdge id="Flow_0clrq1y_di" bpmnElement="NewOrder">
+        <di:waypoint x="251" y="425"/>
+        <di:waypoint x="251" y="370"/>
+        <di:waypoint x="321" y="370"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="253" y="387" width="18" height="14" />
+          <dc:Bounds x="253" y="387" width="18" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1pgua1u_di" bpmnElement="Flow_1pgua1u">
-        <di:waypoint x="1788" y="450" />
-        <di:waypoint x="1853" y="450" />
+      <bpmndi:BPMNEdge id="Flow_1pgua1u_di" bpmnElement="SalesReview-Out">
+        <di:waypoint x="1788" y="450"/>
+        <di:waypoint x="1853" y="450"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1jh5w0z_di" bpmnElement="Flow_1jh5w0z">
-        <di:waypoint x="1878" y="475" />
-        <di:waypoint x="1878" y="670" />
+      <bpmndi:BPMNEdge id="Flow_1jh5w0z_di" bpmnElement="SalesClosed">
+        <di:waypoint x="1878" y="475"/>
+        <di:waypoint x="1878" y="670"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1882" y="520" width="35" height="14" />
+          <dc:Bounds x="1882" y="520" width="35" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1b215db_di" bpmnElement="Flow_1b215db">
-        <di:waypoint x="1878" y="425" />
-        <di:waypoint x="1878" y="336" />
+      <bpmndi:BPMNEdge id="Flow_1b215db_di" bpmnElement="LegalReviewNeeded">
+        <di:waypoint x="1878" y="425"/>
+        <di:waypoint x="1878" y="336"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1884" y="376" width="67" height="14" />
+          <dc:Bounds x="1884" y="376" width="68" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="UserTask-LegalReview-Out_di" bpmnElement="UserTask-LegalReview-Out">
-        <di:waypoint x="1878" y="256" />
-        <di:waypoint x="1878" y="205" />
+      <bpmndi:BPMNEdge id="UserTask-LegalReview-Out_di" bpmnElement="LegalReview-Out">
+        <di:waypoint x="1878" y="256"/>
+        <di:waypoint x="1878" y="205"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_01n7fud_di" bpmnElement="Flow_01n7fud">
-        <di:waypoint x="1903" y="180" />
-        <di:waypoint x="2068" y="180" />
+      <bpmndi:BPMNEdge id="Flow_01n7fud_di" bpmnElement="SalesApproved">
+        <di:waypoint x="1903" y="180"/>
+        <di:waypoint x="2068" y="180"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1936" y="163" width="47" height="14" />
+          <dc:Bounds x="1936" y="163" width="47" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1kni1c8_di" bpmnElement="Flow_1kni1c8" bioc:stroke="#831311" color:border-color="#831311">
-        <di:waypoint x="1853" y="180" />
-        <di:waypoint x="1738" y="180" />
-        <di:waypoint x="1738" y="410" />
+      <bpmndi:BPMNEdge id="Flow_1kni1c8_di" bpmnElement="SalesRejected" bioc:stroke="#831311" color:border-color="#831311">
+        <di:waypoint x="1853" y="180"/>
+        <di:waypoint x="1738" y="180"/>
+        <di:waypoint x="1738" y="410"/>
         <bpmndi:BPMNLabel color:color="#831311">
-          <dc:Bounds x="1778" y="163" width="44" height="14" />
+          <dc:Bounds x="1778" y="163" width="44" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1che2jf_di" bpmnElement="Flow_1che2jf">
-        <di:waypoint x="1903" y="450" />
-        <di:waypoint x="2108" y="450" />
-        <di:waypoint x="2108" y="220" />
+      <bpmndi:BPMNEdge id="Flow_1che2jf_di" bpmnElement="SalesDone">
+        <di:waypoint x="1903" y="450"/>
+        <di:waypoint x="2108" y="450"/>
+        <di:waypoint x="2108" y="220"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1930" y="459" width="27" height="14" />
+          <dc:Bounds x="1930" y="459" width="27" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1ng9unu_di" bpmnElement="Flow_1ng9unu">
-        <di:waypoint x="1100" y="394" />
-        <di:waypoint x="1130" y="394" />
-        <di:waypoint x="1130" y="450" />
-        <di:waypoint x="1175" y="450" />
+      <bpmndi:BPMNEdge id="Flow_1ng9unu_di" bpmnElement="Recipients-Out">
+        <di:waypoint x="1100" y="394"/>
+        <di:waypoint x="1130" y="394"/>
+        <di:waypoint x="1130" y="450"/>
+        <di:waypoint x="1175" y="450"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0erdv5f_di" bpmnElement="Flow_0erdv5f">
-        <di:waypoint x="925" y="450" />
-        <di:waypoint x="971" y="450" />
-        <di:waypoint x="971" y="584" />
-        <di:waypoint x="1000" y="584" />
+      <bpmndi:BPMNEdge id="Flow_0erdv5f_di" bpmnElement="RulesEngine-ReviewNeeded">
+        <di:waypoint x="925" y="450"/>
+        <di:waypoint x="971" y="450"/>
+        <di:waypoint x="971" y="584"/>
+        <di:waypoint x="1000" y="584"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1fr1af8_di" bpmnElement="Flow_1fr1af8">
-        <di:waypoint x="925" y="450" />
-        <di:waypoint x="970" y="450" />
-        <di:waypoint x="970" y="394" />
-        <di:waypoint x="1000" y="394" />
+      <bpmndi:BPMNEdge id="Flow_1fr1af8_di" bpmnElement="RulesEngine-Recipients">
+        <di:waypoint x="925" y="450"/>
+        <di:waypoint x="970" y="450"/>
+        <di:waypoint x="970" y="394"/>
+        <di:waypoint x="1000" y="394"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0k20zfg_di" bpmnElement="Flow_0k20zfg">
-        <di:waypoint x="421" y="527" />
-        <di:waypoint x="458" y="527" />
+      <bpmndi:BPMNEdge id="Flow_0k20zfg_di" bpmnElement="UpdateOrder-Out">
+        <di:waypoint x="421" y="527"/>
+        <di:waypoint x="458" y="527"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_03uqf5v_di" bpmnElement="Flow_03uqf5v">
-        <di:waypoint x="421" y="370" />
-        <di:waypoint x="458" y="370" />
+      <bpmndi:BPMNEdge id="Flow_03uqf5v_di" bpmnElement="InsertOrder-Out">
+        <di:waypoint x="421" y="370"/>
+        <di:waypoint x="458" y="370"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1ie8s53_di" bpmnElement="Flow_1ie8s53">
-        <di:waypoint x="925" y="450" />
-        <di:waypoint x="970" y="450" />
-        <di:waypoint x="970" y="296" />
-        <di:waypoint x="1000" y="296" />
+      <bpmndi:BPMNEdge id="Flow_1ie8s53_di" bpmnElement="RulesEngine-Reportability">
+        <di:waypoint x="925" y="450"/>
+        <di:waypoint x="970" y="450"/>
+        <di:waypoint x="970" y="296"/>
+        <di:waypoint x="1000.00006" y="296.0"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_06gpvhd_di" bpmnElement="Flow_06gpvhd">
-        <di:waypoint x="1100" y="296" />
-        <di:waypoint x="1130" y="296" />
-        <di:waypoint x="1130" y="450" />
-        <di:waypoint x="1175" y="450" />
+      <bpmndi:BPMNEdge id="Flow_06gpvhd_di" bpmnElement="Reportability-Out">
+        <di:waypoint x="1100.0" y="296.0"/>
+        <di:waypoint x="1130" y="296"/>
+        <di:waypoint x="1130" y="450"/>
+        <di:waypoint x="1175" y="450"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1uam0jq_di" bpmnElement="Flow_1uam0jq">
-        <di:waypoint x="925" y="450" />
-        <di:waypoint x="970" y="450" />
-        <di:waypoint x="970" y="490" />
-        <di:waypoint x="1000" y="490" />
+      <bpmndi:BPMNEdge id="Flow_1uam0jq_di" bpmnElement="RulesEngine-InvoiceNeeded">
+        <di:waypoint x="925" y="450"/>
+        <di:waypoint x="970" y="450"/>
+        <di:waypoint x="970" y="490"/>
+        <di:waypoint x="1000" y="490"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0nofidu_di" bpmnElement="Flow_0nofidu">
-        <di:waypoint x="1100" y="490" />
-        <di:waypoint x="1130" y="490" />
-        <di:waypoint x="1130" y="450" />
-        <di:waypoint x="1175" y="450" />
+      <bpmndi:BPMNEdge id="Flow_0nofidu_di" bpmnElement="InvoiceNeeded-Out">
+        <di:waypoint x="1100" y="490"/>
+        <di:waypoint x="1130" y="490"/>
+        <di:waypoint x="1130" y="450"/>
+        <di:waypoint x="1175" y="450"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0b3n1gi_di" bpmnElement="Flow_0b3n1gi">
-        <di:waypoint x="1325" y="450" />
-        <di:waypoint x="1380" y="450" />
+      <bpmndi:BPMNEdge id="Flow_0b3n1gi_di" bpmnElement="InvoiceRequired">
+        <di:waypoint x="1325" y="450"/>
+        <di:waypoint x="1380" y="450"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1331" y="433" width="18" height="14" />
+          <dc:Bounds x="1331" y="433" width="18" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_05sxzea_di" bpmnElement="Flow_05sxzea">
-        <di:waypoint x="558" y="370" />
-        <di:waypoint x="820" y="370" />
-        <di:waypoint x="820" y="425" />
+      <bpmndi:BPMNEdge id="Flow_05sxzea_di" bpmnElement="AckReception-New-Out">
+        <di:waypoint x="558" y="370"/>
+        <di:waypoint x="820" y="370"/>
+        <di:waypoint x="820" y="425"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Gateway-Processing-NotNeeded_di" bpmnElement="Gateway-Processing-NotNeeded">
-        <di:waypoint x="748" y="552" />
-        <di:waypoint x="748" y="790" />
-        <di:waypoint x="2260" y="790" />
-        <di:waypoint x="2260" y="728" />
+      <bpmndi:BPMNEdge id="Gateway-Processing-NotNeeded_di" bpmnElement="ProcessingNotNeeded">
+        <di:waypoint x="748" y="552"/>
+        <di:waypoint x="748" y="790"/>
+        <di:waypoint x="2260" y="790"/>
+        <di:waypoint x="2260" y="728"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="752" y="593" width="15" height="14" />
+          <dc:Bounds x="752" y="593" width="15" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_18v9i6e_di" bpmnElement="Flow_18v9i6e">
-        <di:waypoint x="1225" y="450" />
-        <di:waypoint x="1275" y="450" />
+      <bpmndi:BPMNEdge id="Flow_18v9i6e_di" bpmnElement="RulesEngine-End-Out">
+        <di:waypoint x="1225" y="450"/>
+        <di:waypoint x="1275" y="450"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_18injm2_di" bpmnElement="Flow_18injm2">
-        <di:waypoint x="558" y="527" />
-        <di:waypoint x="589" y="527" />
+      <bpmndi:BPMNEdge id="Flow_18injm2_di" bpmnElement="AckReception-Update-Out">
+        <di:waypoint x="558" y="527"/>
+        <di:waypoint x="589" y="527"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0y5lxhc_di" bpmnElement="Flow_0y5lxhc">
-        <di:waypoint x="845" y="450" />
-        <di:waypoint x="875" y="450" />
+      <bpmndi:BPMNEdge id="Flow_0y5lxhc_di" bpmnElement="OrderType-End-Out">
+        <di:waypoint x="845" y="450"/>
+        <di:waypoint x="875" y="450"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0vyw4ln_di" bpmnElement="Flow_0vyw4ln">
-        <di:waypoint x="1595" y="450" />
-        <di:waypoint x="1688" y="450" />
+      <bpmndi:BPMNEdge id="Flow_0vyw4ln_di" bpmnElement="ReviewRequired">
+        <di:waypoint x="1595" y="450"/>
+        <di:waypoint x="1688" y="450"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1630" y="433" width="18" height="14" />
+          <dc:Bounds x="1630" y="433" width="18" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Task-FinalizeSale-Out_di" bpmnElement="Task-FinalizeSale-Out">
-        <di:waypoint x="1928" y="710" />
-        <di:waypoint x="2242" y="710" />
+      <bpmndi:BPMNEdge id="Task-FinalizeSale-Out_di" bpmnElement="FinalizeSale-Out">
+        <di:waypoint x="1928" y="710"/>
+        <di:waypoint x="2242" y="710"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_17rrlaz_di" bpmnElement="Flow_17rrlaz">
-        <di:waypoint x="1570" y="425" />
-        <di:waypoint x="1570" y="80" />
-        <di:waypoint x="2118" y="80" />
-        <di:waypoint x="2118" y="140" />
+      <bpmndi:BPMNEdge id="Flow_17rrlaz_di" bpmnElement="ReviewNotRequired">
+        <di:waypoint x="1570" y="425"/>
+        <di:waypoint x="1570" y="80"/>
+        <di:waypoint x="2118" y="80"/>
+        <di:waypoint x="2118" y="140"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1582" y="376" width="15" height="14" />
+          <dc:Bounds x="1582" y="376" width="15" height="14"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0vlzlji_di" bpmnElement="Flow_0vlzlji" bioc:stroke="#831311" color:border-color="#831311">
-        <di:waypoint x="1430" y="508" />
-        <di:waypoint x="1430" y="570" />
+      <bpmndi:BPMNEdge id="Flow_0vlzlji_di" bpmnElement="InvoiceGenerationError-Out" bioc:stroke="#831311" color:border-color="#831311">
+        <di:waypoint x="1430" y="508"/>
+        <di:waypoint x="1430" y="570"/>
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

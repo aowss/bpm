@@ -20,18 +20,10 @@
 
         <exclusiveGateway id="decision"/>
         <sequenceFlow sourceRef="decision" targetRef="externalSystemCall">
-            <conditionExpression xsi:type="tFormalExpression">
-                <![CDATA[
-          ${approved}
-        ]]>
-            </conditionExpression>
+            <conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression>
         </sequenceFlow>
         <sequenceFlow  sourceRef="decision" targetRef="sendRejectionMail">
-            <conditionExpression xsi:type="tFormalExpression">
-                <![CDATA[
-          ${!approved}
-        ]]>
-            </conditionExpression>
+            <conditionExpression xsi:type="tFormalExpression">${approved == false}</conditionExpression>
         </sequenceFlow>
 
         <serviceTask id="externalSystemCall" name="Enter holidays in external system"

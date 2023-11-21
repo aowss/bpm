@@ -34,10 +34,10 @@ class HolidayRequestProcessTest {
     }
 
     @Test
-    @Deployment(resources = "holiday-request.bpmn")
+    @Deployment(resources = "Sales-Flow.bpmn20.xml")
     @DisplayName("Holiday approved")
     void holidayApproved() {
-        runtimeService.startProcessInstanceByKey("holidayRequest", Map.of("employee", "Aowss Ibrahim", "nrOfHolidays", 5));
+        runtimeService.startProcessInstanceByKey("Sales-Process", Map.of("employee", "Aowss Ibrahim", "nrOfHolidays", 5));
 
         Task task = taskService.createTaskQuery().singleResult();
         assertThat(task.getTaskDefinitionKey(), is("approveTask"));
